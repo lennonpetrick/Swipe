@@ -1,4 +1,4 @@
-package com.test.swipe;
+package com.test.swipe.domain.model;
 
 import java.io.Serializable;
 

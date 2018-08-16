@@ -1,4 +1,4 @@
-package com.test.swipe;
+package com.test.swipe.ui.adapter;
 
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
@@ -7,7 +7,13 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.test.swipe.R;
+import com.test.swipe.domain.model.Country;
+
 import java.util.List;
+
+import butterknife.BindView;
+import butterknife.ButterKnife;
 
 public class CountriesAdapter extends RecyclerView.Adapter<CountriesAdapter.ViewHolder> {
 
@@ -40,15 +46,15 @@ public class CountriesAdapter extends RecyclerView.Adapter<CountriesAdapter.View
 
     class ViewHolder extends RecyclerView.ViewHolder {
 
-        private TextView mTvName;
-        private TextView mTvCurrency;
-        private TextView mTvLanguage;
+        @BindView(R.id.tvName) TextView mTvName;
+        @BindView(R.id.tvCurrency) TextView mTvCurrency;
+        @BindView(R.id.tvLanguage) TextView mTvLanguage;
+        @BindView(R.id.container_background) View mBackgroundView;
+        @BindView(R.id.container_foreground) View mForegroundView;
 
-        public ViewHolder(View itemView) {
+        ViewHolder(View itemView) {
             super(itemView);
-            mTvName = itemView.findViewById(R.id.tvName);
-            mTvCurrency = itemView.findViewById(R.id.tvCurrency);
-            mTvLanguage = itemView.findViewById(R.id.tvLanguage);
+            ButterKnife.bind(this, itemView);
         }
     }
 }
