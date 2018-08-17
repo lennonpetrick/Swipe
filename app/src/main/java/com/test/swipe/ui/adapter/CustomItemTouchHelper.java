@@ -33,6 +33,7 @@ public class CustomItemTouchHelper extends ItemTouchHelper.SimpleCallback {
 
     @Override
     public void clearView(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder) {
+        ((ViewHolder) viewHolder).itemView.setAlpha(1.0f);
         getDefaultUIUtil()
                 .clearView(((ViewHolder) viewHolder).mForegroundView);
     }
@@ -40,7 +41,7 @@ public class CustomItemTouchHelper extends ItemTouchHelper.SimpleCallback {
     @Override
     public void onSelectedChanged(RecyclerView.ViewHolder viewHolder, int actionState) {
         if (viewHolder != null) {
-            if (selectedHolder != null) {
+            if (selectedHolder != null && !selectedHolder.equals(viewHolder)) {
                 swipeViewBack(((ViewHolder) selectedHolder).mForegroundView);
             }
 
@@ -61,16 +62,15 @@ public class CustomItemTouchHelper extends ItemTouchHelper.SimpleCallback {
 
     @Override
     public void onChildDraw(Canvas c, RecyclerView recyclerView,
-                            RecyclerView.ViewHolder viewHolder, final float dX, float dY,
+                            RecyclerView.ViewHolder viewHolder, float dX, float dY,
                             int actionState, boolean isCurrentlyActive) {
 
         View foreground = ((ViewHolder) viewHolder).mForegroundView;
         View itemView = ((ViewHolder) viewHolder).itemView;
 
-        float auxDx;
-        float oldDx = 0.0f;
         final float width = recyclerView.getWidth();
         final float threshold = width * mAnchorPoint;
+        float oldDx = 0.0f;
 
         Object tag = foreground.getTag();
         if (tag != null) {
@@ -78,20 +78,19 @@ public class CustomItemTouchHelper extends ItemTouchHelper.SimpleCallback {
         }
 
         // It's bigger than threshold and user releases the touch
-        if (Math.abs(oldDx) >= threshold && !isCurrentlyActive) {
-            auxDx = Math.max(threshold, Math.abs(dX)) * (dX <= 0 ? -1 : 1);
-        } else {
-            auxDx = dX;
+        if ((Math.abs(oldDx) > threshold && !isCurrentlyActive)
+                || (Math.abs(oldDx) == threshold)) {
+            dX = Math.max(threshold, Math.abs(dX)) * (dX <= 0 ? -1 : 1);
         }
 
-        oldDx = auxDx;
+        oldDx = dX;
         foreground.setTag(oldDx);
 
         getDefaultUIUtil()
                 .onDraw(c, recyclerView, foreground,
-                        auxDx, dY, actionState, isCurrentlyActive);
+                        dX, dY, actionState, isCurrentlyActive);
 
-        float alpha = (1 - (Math.abs(auxDx * 1.2f) / width));
+        float alpha = (1 - (Math.abs(dX * 1.2f) / width));
         itemView.setAlpha(alpha);
     }
 
@@ -121,6 +120,7 @@ public class CustomItemTouchHelper extends ItemTouchHelper.SimpleCallback {
             @Override
             public void onAnimationEnd(Animation animation) {
                 getDefaultUIUtil().clearView(view);
+                view.setTag(null);
                 view.clearAnimation();
             }
 
