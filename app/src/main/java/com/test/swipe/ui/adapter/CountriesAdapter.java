@@ -44,6 +44,10 @@ public class CountriesAdapter extends RecyclerView.Adapter<CountriesAdapter.View
         return mCountries.size();
     }
 
+    public Country getItem(int position) {
+        return mCountries.get(position);
+    }
+
     public void remoteItem(int position) {
         mCountries.remove(position);
         notifyItemRemoved(position);

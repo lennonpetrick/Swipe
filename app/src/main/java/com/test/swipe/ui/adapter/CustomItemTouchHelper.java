@@ -1,6 +1,8 @@
 package com.test.swipe.ui.adapter;
 
 import android.graphics.Canvas;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.helper.ItemTouchHelper;
 import android.view.View;
@@ -8,20 +10,27 @@ import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.Animation;
 import android.view.animation.TranslateAnimation;
 
+import com.test.swipe.R;
 import com.test.swipe.ui.adapter.CountriesAdapter.ViewHolder;
 
 public class CustomItemTouchHelper extends ItemTouchHelper.SimpleCallback {
 
     private OnSwipeListener mListener;
     private float mAnchorPoint;
+    private boolean mRemovePending;
 
-    private RecyclerView.ViewHolder selectedHolder;
+    private RecyclerView.ViewHolder mSelectedHolder;
+    private View.OnClickListener mOnClickListener;
+    private RecyclerView mRecyclerView;
 
     public CustomItemTouchHelper(int dragDirs, int swipeDirs,
-                                 float anchorPoint,  OnSwipeListener listener) {
+                                 float anchorPoint, @NonNull RecyclerView recyclerView,
+                                 @Nullable OnSwipeListener listener) {
         super(dragDirs, swipeDirs);
         mListener = listener;
         mAnchorPoint = anchorPoint;
+        mRecyclerView = recyclerView;
+        createListeners();
     }
 
     @Override
@@ -33,7 +42,6 @@ public class CustomItemTouchHelper extends ItemTouchHelper.SimpleCallback {
 
     @Override
     public void clearView(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder) {
-        ((ViewHolder) viewHolder).itemView.setAlpha(1.0f);
         getDefaultUIUtil()
                 .clearView(((ViewHolder) viewHolder).mForegroundView);
     }
@@ -41,13 +49,18 @@ public class CustomItemTouchHelper extends ItemTouchHelper.SimpleCallback {
     @Override
     public void onSelectedChanged(RecyclerView.ViewHolder viewHolder, int actionState) {
         if (viewHolder != null) {
-            if (selectedHolder != null && !selectedHolder.equals(viewHolder)) {
-                swipeViewBack(((ViewHolder) selectedHolder).mForegroundView);
+            if (mSelectedHolder != null && !mSelectedHolder.equals(viewHolder)) {
+                swipeViewBack(((ViewHolder) mSelectedHolder).mForegroundView);
             }
 
-            selectedHolder = viewHolder;
+            mSelectedHolder = viewHolder;
+            View foreground = ((ViewHolder) viewHolder).mForegroundView;
+            View background = ((ViewHolder) viewHolder).mBackgroundView;
+            foreground.setOnClickListener(mOnClickListener);
+            background.setOnClickListener(mOnClickListener);
+
             getDefaultUIUtil()
-                    .onSelected(((ViewHolder) viewHolder).mForegroundView);
+                    .onSelected(foreground);
         }
     }
 
@@ -77,7 +90,6 @@ public class CustomItemTouchHelper extends ItemTouchHelper.SimpleCallback {
             oldDx = (float) tag;
         }
 
-        // It's bigger than threshold and user releases the touch
         if ((Math.abs(oldDx) > threshold && !isCurrentlyActive)
                 || (Math.abs(oldDx) == threshold)) {
             dX = Math.max(threshold, Math.abs(dX)) * (dX <= 0 ? -1 : 1);
@@ -85,6 +97,7 @@ public class CustomItemTouchHelper extends ItemTouchHelper.SimpleCallback {
 
         oldDx = dX;
         foreground.setTag(oldDx);
+        mRemovePending = dX != 0;
 
         getDefaultUIUtil()
                 .onDraw(c, recyclerView, foreground,
@@ -106,6 +119,36 @@ public class CustomItemTouchHelper extends ItemTouchHelper.SimpleCallback {
         }
     }
 
+    private void swipeView(final ViewHolder holder) {
+        View foreground = holder.mForegroundView;
+        TranslateAnimation animation = new TranslateAnimation(
+                0.0f, foreground.getTranslationX() / mAnchorPoint,
+                foreground.getTranslationY(), foreground.getTranslationY());
+        animation.setDuration(150);
+        animation.setInterpolator(new AccelerateDecelerateInterpolator());
+        animation.setFillEnabled(true);
+        animation.setAnimationListener(new Animation.AnimationListener() {
+            @Override
+            public void onAnimationStart(Animation animation) {}
+
+            @Override
+            public void onAnimationEnd(Animation animation) {
+                getDefaultUIUtil().clearView(foreground);
+                foreground.setTag(null);
+                foreground.clearAnimation();
+                mRemovePending = false;
+                foreground.setOnClickListener(null);
+                holder.mBackgroundView.setOnClickListener(null);
+                onSwiped(mSelectedHolder, getSwipeDirs(null, mSelectedHolder));
+                mSelectedHolder = null;
+            }
+
+            @Override
+            public void onAnimationRepeat(Animation animation) {}
+        });
+        foreground.startAnimation(animation);
+    }
+
     private void swipeViewBack(final View view) {
         TranslateAnimation animation = new TranslateAnimation(
                 0.0f, view.getTranslationX() * -1,
@@ -122,12 +165,37 @@ public class CustomItemTouchHelper extends ItemTouchHelper.SimpleCallback {
                 getDefaultUIUtil().clearView(view);
                 view.setTag(null);
                 view.clearAnimation();
+                mRemovePending = false;
+                view.setOnClickListener(null);
             }
 
             @Override
             public void onAnimationRepeat(Animation animation) {}
         });
         view.startAnimation(animation);
+    }
+
+    private void createListeners() {
+        mRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
+                if (mRemovePending && mSelectedHolder != null) {
+                    swipeViewBack(((ViewHolder) mSelectedHolder).mForegroundView);
+                    mSelectedHolder = null;
+                }
+            }
+        });
+
+        mOnClickListener = v -> {
+            if (!mRemovePending)
+                return;
+
+            if (v.getId() == R.id.container_foreground) {
+                swipeViewBack(v);
+            } else {
+                swipeView((ViewHolder) mSelectedHolder);
+            }
+        };
     }
 
     public interface OnSwipeListener {

@@ -8,6 +8,7 @@ import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.helper.ItemTouchHelper;
+import android.view.MenuItem;
 
 import com.test.swipe.R;
 import com.test.swipe.data.datasource.CloudCountryDataSource;
@@ -44,6 +45,19 @@ public class CountriesActivity extends AppCompatActivity implements CountryContr
     }
 
     @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case android.R.id.home: {
+                finish();
+                return true;
+            }
+
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
+    @Override
     protected void onDestroy() {
         mPresenter.destroy();
         mPresenter = null;
@@ -64,7 +78,7 @@ public class CountriesActivity extends AppCompatActivity implements CountryContr
                 DividerItemDecoration.VERTICAL));
 
         new ItemTouchHelper(new CustomItemTouchHelper(0,
-                ItemTouchHelper.LEFT, 0.25f, itemPosition -> {
+                ItemTouchHelper.LEFT, 0.25f, mRecyclerView, itemPosition -> {
                     CountriesAdapter adapter = (CountriesAdapter) mRecyclerView.getAdapter();
                     adapter.remoteItem(itemPosition);
                 }))
