@@ -44,6 +44,11 @@ public class CountriesAdapter extends RecyclerView.Adapter<CountriesAdapter.View
         return mCountries.size();
     }
 
+    public void remoteItem(int position) {
+        mCountries.remove(position);
+        notifyItemRemoved(position);
+    }
+
     class ViewHolder extends RecyclerView.ViewHolder {
 
         @BindView(R.id.tvName) TextView mTvName;

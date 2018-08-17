@@ -63,7 +63,11 @@ public class CountriesActivity extends AppCompatActivity implements CountryContr
         mRecyclerView.addItemDecoration(new DividerItemDecoration(this,
                 DividerItemDecoration.VERTICAL));
 
-        new ItemTouchHelper(new CustomItemTouchHelper(0, ItemTouchHelper.LEFT))
+        new ItemTouchHelper(new CustomItemTouchHelper(0,
+                ItemTouchHelper.LEFT, 0.25f, itemPosition -> {
+                    CountriesAdapter adapter = (CountriesAdapter) mRecyclerView.getAdapter();
+                    adapter.remoteItem(itemPosition);
+                }))
                 .attachToRecyclerView(mRecyclerView);
     }
 
